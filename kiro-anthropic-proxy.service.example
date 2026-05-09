@@ -1,0 +1,15 @@
+[Unit]
+Description=Kiro Anthropic-compatible proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/kiro-anthropic-proxy
+EnvironmentFile=/root/kiro-anthropic-proxy/.env
+ExecStart=/usr/bin/env bash /root/kiro-anthropic-proxy/start.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
