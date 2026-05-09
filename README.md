@@ -33,6 +33,35 @@ npm start
 }
 ```
 
+## Sub2API Upstream
+
+Use this proxy as an Anthropic API-key upstream in Sub2API:
+
+```json
+{
+  "name": "kiro-claude-opus-4.7",
+  "platform": "anthropic",
+  "type": "apikey",
+  "credentials": {
+    "api_key": "your-inbound-master-key",
+    "base_url": "http://host.docker.internal:8787"
+  },
+  "extra": {
+    "anthropic_passthrough": true
+  },
+  "concurrency": 1,
+  "priority": 1
+}
+```
+
+When Sub2API runs in Docker on Linux, add this to the Sub2API service so
+`host.docker.internal` resolves to the host:
+
+```yaml
+extra_hosts:
+  - "host.docker.internal:host-gateway"
+```
+
 ## Test
 
 ```bash
