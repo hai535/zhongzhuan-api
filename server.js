@@ -58,7 +58,8 @@ function requireAuth(req, res) {
   }
 
   const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice('Bearer '.length) : '';
+  const bearerToken = auth.startsWith('Bearer ') ? auth.slice('Bearer '.length) : '';
+  const token = bearerToken || req.headers['x-api-key'] || '';
   if (!constantTimeEqual(token, MASTER_API_KEY)) {
     sendError(res, 401, 'authentication_error', 'Invalid API key');
     return false;
