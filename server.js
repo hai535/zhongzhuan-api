@@ -136,7 +136,7 @@ function stripAnsi(text) {
   const cleaned = text
     .replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1B\\))/g, '')
     .replace(/^\s*WARNING: Failed to retrieve MCP settings; MCP functionality disabled\s*/m, '')
-    .replace(/\n\s*▸ Credits:.*$/m, '')
+    .replace(/\n\s*\S?\s*Credits:.*$/m, '')
     .trim();
 
   return cleaned.replace(/^>\s?/, '').trim();
