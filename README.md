@@ -2,7 +2,8 @@
 
 Minimal Anthropic-compatible adapter for Kiro CLI headless mode.
 
-It accepts `POST /v1/messages`, validates an inbound bearer key, calls:
+It accepts `POST /v1/messages`, validates an inbound key from either
+`Authorization: Bearer ...` or `x-api-key`, calls:
 
 ```bash
 kiro-cli chat --model claude-opus-4.7 --no-interactive "$PROMPT"
@@ -54,6 +55,7 @@ curl -sS http://127.0.0.1:8787/v1/messages \
 - non-streaming responses
 - fake SSE for `stream: true` after the full Kiro response is ready
 - text content blocks
+- inbound auth via `Authorization: Bearer ...` or `x-api-key`
 - basic model mapping such as `claude-opus-4-7` -> `claude-opus-4.7`
 
 ## Not Supported
