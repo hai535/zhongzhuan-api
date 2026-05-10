@@ -6,7 +6,7 @@ It accepts `POST /v1/messages`, validates an inbound key from either
 `Authorization: Bearer ...` or `x-api-key`, calls:
 
 ```bash
-kiro-cli chat --model claude-opus-4.7 --no-interactive "$PROMPT"
+kiro-cli chat --model auto --no-interactive "$PROMPT"
 ```
 
 and wraps the output as an Anthropic message response.
@@ -17,9 +17,15 @@ and wraps the output as an Anthropic message response.
 cd /root/kiro-anthropic-proxy
 export MASTER_API_KEY="your-inbound-master-key"
 export KIRO_API_KEY="ksk_xxx"
-export KIRO_MODEL="claude-opus-4.7"
+export KIRO_MODEL="auto"
+export KIRO_TRUST_TOOLS="fs_read,fs_write"
+export KIRO_WORKDIR="/root"
 npm start
 ```
+
+`KIRO_TRUST_TOOLS` is passed to `kiro-cli chat --trust-tools=...`. Set it to
+`fs_read,fs_write` to allow local file reads and writes, or `*` to pass
+`--trust-all-tools`.
 
 ## Client Env
 
@@ -85,11 +91,12 @@ curl -sS http://127.0.0.1:8787/v1/messages \
 - fake SSE for `stream: true` after the full Kiro response is ready
 - text content blocks
 - inbound auth via `Authorization: Bearer ...` or `x-api-key`
-- basic model mapping such as `claude-opus-4-7` -> `claude-opus-4.7`
+- basic model mapping such as `claude-opus-4-7` -> Kiro `auto`
+- Kiro CLI local file access when `KIRO_TRUST_TOOLS` is configured
 
 ## Not Supported
 
-- native Anthropic tool use
+- native Anthropic tool use executed by this proxy
 - true token streaming from Kiro CLI
 - accurate Anthropic usage token accounting
 - image inputs
