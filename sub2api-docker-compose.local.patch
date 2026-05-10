@@ -1,0 +1,36 @@
+diff --git a/deploy/docker-compose.local.yml b/deploy/docker-compose.local.yml
+index 51a80227..e47c6e88 100644
+--- a/deploy/docker-compose.local.yml
++++ b/deploy/docker-compose.local.yml
+@@ -33,6 +33,8 @@ services:
+         hard: 100000
+     ports:
+       - "${BIND_HOST:-0.0.0.0}:${SERVER_PORT:-8080}:8080"
++    extra_hosts:
++      - "host.docker.internal:host-gateway"
+     volumes:
+       # Local directory mapping for easy migration
+       - ./data:/app/data
+@@ -216,13 +218,15 @@ services:
+     volumes:
+       # Local directory mapping for easy migration
+       - ./redis_data:/data
+-    command: >
+-        sh -c '
+-          redis-server
+-          --save 60 1
+-          --appendonly yes
+-          --appendfsync everysec
+-          ${REDIS_PASSWORD:+--requirepass "$REDIS_PASSWORD"}'
++    command:
++      - redis-server
++      - --save
++      - "60"
++      - "1"
++      - --appendonly
++      - "yes"
++      - --appendfsync
++      - everysec
+     environment:
+       - TZ=${TZ:-Asia/Shanghai}
+       # REDISCLI_AUTH is used by redis-cli for authentication (safer than -a flag)
