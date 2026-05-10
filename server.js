@@ -10,21 +10,23 @@ const HOST = process.env.HOST || '127.0.0.1';
 const MASTER_API_KEY = process.env.MASTER_API_KEY || '';
 const KIRO_API_KEY = process.env.KIRO_API_KEY || '';
 const KIRO_CLI = process.env.KIRO_CLI || '/root/.local/bin/kiro-cli';
-const DEFAULT_KIRO_MODEL = process.env.KIRO_MODEL || 'claude-opus-4.7';
+const DEFAULT_KIRO_MODEL = process.env.KIRO_MODEL || 'auto';
+const KIRO_TRUST_TOOLS = process.env.KIRO_TRUST_TOOLS || '';
+const KIRO_WORKDIR = process.env.KIRO_WORKDIR || '';
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS || 300000);
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 2 * 1024 * 1024);
 
 const MODEL_MAP = new Map([
-  ['claude-opus-4-7', 'claude-opus-4.7'],
-  ['claude-opus-4.7', 'claude-opus-4.7'],
-  ['claude-opus-4-6', 'claude-opus-4.6'],
-  ['claude-opus-4.6', 'claude-opus-4.6'],
-  ['claude-sonnet-4-6', 'claude-sonnet-4.6'],
-  ['claude-sonnet-4.6', 'claude-sonnet-4.6'],
-  ['claude-sonnet-4-5', 'claude-sonnet-4.5'],
-  ['claude-sonnet-4.5', 'claude-sonnet-4.5'],
-  ['claude-haiku-4-5', 'claude-haiku-4.5'],
-  ['claude-haiku-4.5', 'claude-haiku-4.5'],
+  ['claude-opus-4-7', 'auto'],
+  ['claude-opus-4.7', 'auto'],
+  ['claude-opus-4-6', 'auto'],
+  ['claude-opus-4.6', 'auto'],
+  ['claude-sonnet-4-6', 'auto'],
+  ['claude-sonnet-4.6', 'auto'],
+  ['claude-sonnet-4-5', 'auto'],
+  ['claude-sonnet-4.5', 'auto'],
+  ['claude-haiku-4-5', 'auto'],
+  ['claude-haiku-4.5', 'auto'],
   ['auto', 'auto'],
 ]);
 
@@ -119,6 +121,19 @@ function buildPrompt(body) {
     parts.push(`System instructions:\n${system}`);
   }
 
+  if (Array.isArray(body.tools) && body.tools.length > 0) {
+    const toolNames = body.tools
+      .map((tool) => tool && tool.name)
+      .filter(Boolean)
+      .join(', ');
+    if (toolNames) {
+      parts.push(
+        `Client declared tools (${toolNames}), but this Kiro CLI proxy cannot execute tool calls. ` +
+          'Answer with normal text only and do not request tool use.'
+      );
+    }
+  }
+
   if (!Array.isArray(body.messages) || body.messages.length === 0) {
     throw Object.assign(new Error('messages must be a non-empty array'), { status: 400 });
   }
@@ -148,6 +163,19 @@ function resolveKiroModel(model) {
   return MODEL_MAP.get(model) || model;
 }
 
+function buildKiroArgs(prompt, kiroModel) {
+  const args = ['chat', '--model', kiroModel, '--no-interactive'];
+
+  if (KIRO_TRUST_TOOLS === '*') {
+    args.push('--trust-all-tools');
+  } else if (KIRO_TRUST_TOOLS) {
+    args.push(`--trust-tools=${KIRO_TRUST_TOOLS}`);
+  }
+
+  args.push(prompt);
+  return args;
+}
+
 function runKiro(prompt, kiroModel) {
   return new Promise((resolve, reject) => {
     if (!KIRO_API_KEY) {
@@ -155,7 +183,8 @@ function runKiro(prompt, kiroModel) {
       return;
     }
 
-    const child = spawn(KIRO_CLI, ['chat', '--model', kiroModel, '--no-interactive', prompt], {
+    const child = spawn(KIRO_CLI, buildKiroArgs(prompt, kiroModel), {
+      cwd: KIRO_WORKDIR || undefined,
       env: {
         ...process.env,
         KIRO_API_KEY,
@@ -267,11 +296,6 @@ async function handleMessages(req, res) {
     body = await readJsonBody(req);
   } catch (err) {
     sendError(res, err.status || 400, 'invalid_request_error', err.message);
-    return;
-  }
-
-  if (body.tools || body.tool_choice) {
-    sendError(res, 400, 'invalid_request_error', 'Tool use is not supported by this Kiro CLI proxy');
     return;
   }
 
