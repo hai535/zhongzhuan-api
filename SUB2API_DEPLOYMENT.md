@@ -55,6 +55,26 @@ services:
       - "host.docker.internal:host-gateway"
 ```
 
+If you deploy with docker-compose v1, avoid shell interpolation in the Redis
+`command:` field. The local deployment uses an explicit argument list:
+
+```yaml
+services:
+  redis:
+    command:
+      - redis-server
+      - --save
+      - "60"
+      - "1"
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+```
+
+The exact local Sub2API diff is also saved in
+`sub2api-docker-compose.local.patch`.
+
 Then configure the upstream account in Sub2API:
 
 ```json
@@ -109,3 +129,10 @@ disables billing and quota checks.
 - `stream: true` returns Anthropic-compatible SSE only after Kiro finishes.
 - Tool use is rejected by the proxy.
 - Token usage fields are placeholders.
+
+## Claude Code Permissions Note
+
+As of 2026-05-10, the local Claude Code configuration under `/root` has no
+MCP/tool permissions granted: `allowedTools` is empty and `mcpServers` is empty
+in `/root/.claude.json`. Do not assume Claude can update GitHub or use MCP
+connectors from that environment unless its permissions are configured first.
